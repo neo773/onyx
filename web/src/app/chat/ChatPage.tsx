@@ -1613,7 +1613,7 @@ export function ChatPage({
                 second_level_message: second_level_answer,
                 type: error ? "error" : "assistant",
                 retrievalType,
-                query: finalMessage?.rephrased_query,
+                query: finalMessage?.rephrased_query || query,
                 documents: documents,
                 citations: finalMessage?.citations || {},
                 files: finalMessage?.files || aiMessageImages || [],
@@ -3070,7 +3070,7 @@ export function ChatPage({
                             <div className="mx-auto w-fit !pointer-events-none flex sticky justify-center">
                               <button
                                 onClick={() => clientScrollToBottom()}
-                                className="p-1 pointer-events-auto rounded-2xl bg-background-strong border border-border  mx-auto "
+                                className="p-1 pointer-events-auto rounded-2xl bg-background-200 border border-border  mx-auto "
                               >
                                 <FiArrowDown size={18} />
                               </button>
