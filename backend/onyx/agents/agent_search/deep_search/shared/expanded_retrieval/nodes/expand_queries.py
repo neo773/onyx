@@ -24,8 +24,10 @@ from onyx.agents.agent_search.shared_graph_utils.utils import parse_question_id
 from onyx.prompts.agent_search import (
     QUERY_REWRITING_PROMPT,
 )
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def expand_queries(
     state: ExpandedRetrievalInput,
     config: RunnableConfig,

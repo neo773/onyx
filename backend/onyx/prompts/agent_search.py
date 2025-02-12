@@ -338,13 +338,17 @@ specific (i.e.,  'what do we do to improve product X' -> 'what do we do to impro
 
   4) research individual questions and areas that should really help to ultimately answer the question.
 
-  5) if meaningful, find relevant facts that may inform another set of sub-questions generate after the set you \
-create now are answered. Example: 'which products have we implemented at company A, and is this different to \
-its competitors?'  could potentially create sub-questions 'what products have we implemented at company A', \
-and 'who are the competitors of company A'. The additional round of sub-question generation which sees the \
-answers for this round of sub-question creation could then use the answer to the second sub-question \
-(which could be 'company B and C are competitors of company A') to then ask 'which products have we implemented \
-at company B', 'which products have we implemented at company C'...
+  5) if applicable and useful, consider using sub-questions to gather relevant information that can inform a \
+subsequent set of sub-questions. The answers to your initial sub-questions will be available when generating \
+the next set.
+For example, if you start with the question, "Which products have we implemented at Company A, and how does \
+this compare to its competitors?" you might first create sub-questions like "What products have we implemented \
+at Company A?" and "Who are the competitors of Company A?"
+The answer to the second sub-question, such as "Company B and C are competitors of Company A," can then be used \
+to generate more specific sub-questions in the next round, like "Which products have we implemented at Company B?" \
+and "Which products have we implemented at Company C?"
+
+You'll be the judge!
 
 Important:
 
@@ -456,6 +460,13 @@ use your internal knowledge, just the provided information!
 
 Make sure that you keep all relevant information, specifically as it concerns the ultimate goal. \
 (But keep other details as well.)
+
+Make sure that you only state what you actually can positively learn from the provided context! \
+Example: if i) ultimate motivation below is asking somethint about the products of competitors of company A, \
+ii) the question you should answer is asking to generally list the products of of companies \
+and iii) the context mentions products of companies A, B, C, D, E, etc., do NOT assume that B, C, D, E, etc. \
+are competitors of A! All you know is that these are products of a number of companies, and you would have \
+to relay on another question - that you do not have access to - to learn whether these are competitors of A.
 
 It is critical that you provide inline citations in the format [D1], [D2], [D3], etc! \
 It is important that the citation is close to the information it supports. \
@@ -684,7 +695,7 @@ Your role is to generate 2-4 new sub-questions that would help to answer the ini
 
 1) The initial question
 2) The initial answer that was found to be unsatisfactory
-3) The sub-questions that were answered and their answers
+3) The sub-questions that were answered AND their answers
 4) The sub-questions that were suggested but not answered (and that you should not repeat!)
 5) The entities, relationships and terms that were extracted from the context
 
@@ -693,20 +704,26 @@ resolve ambiguities and/or to separate the question for different entities that 
 but in a way that does not duplicate questions that were already tried.
 
 Additional Guidelines:
-- The sub-questions should be specific to the question and provide richer context for the question, resolve ambiguities, \
+- The new sub-questions should be specific to the question and provide richer context for the question, resolve ambiguities, \
 or address shortcoming of the initial answer
-- Each sub-question - when answered - should be relevant for the answer to the original question
-- The sub-questions should be free from comparisons, ambiguities,judgements, aggregations, or any other complications that \
+- Each new sub-question - when answered - should be relevant for the answer to the original question
+- The new sub-questions should be free from comparisons, ambiguities,judgements, aggregations, or any other complications that \
 may require extra context
-- The sub-questions MUST have the full context of the original question so that it can be executed by a RAG system \
+- The new sub-questions MUST have the full context of the original question so that it can be executed by a RAG system \
 independently without the original question available
     Example:
     - initial question: "What is the capital of France?"
     - bad sub-question: "What is the name of the river there?"
     - good sub-question: "What is the name of the river that flows through Paris?"
-- For each sub-question, please also provide a search term that can be used to retrieve relevant documents from a document store.
+- For each new sub-question, please also provide a search term that can be used to retrieve relevant documents \
+from a document store.
 - Consider specifically the sub-questions that were suggested but not answered. This is a sign that they are not answerable \
 with the available context, and you should not ask similar questions.
+- Pay attention to the answers of previous sub-question! Often they were set up to give you critical information \
+that you should use to generate new sub-questions. For example, if the answer to a sub-question is \
+'Company B and C are competitors of Company A', you should not ask a question involving the term 'competitors', \
+as you already have the information. You should explicitly reference 'Company B' and 'Company C' in your new sub-questions, \
+as these are the competitors based on the previously answered question. \
  - Do not(!) create sub-questions that are clarifying question to the person who asked the question, \
 like making suggestions or asking the user for more information! This is not useful for the actual \
 question-answering process! You need to take the information from the user as it is given to you! \

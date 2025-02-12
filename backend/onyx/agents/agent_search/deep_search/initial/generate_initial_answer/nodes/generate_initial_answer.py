@@ -63,8 +63,10 @@ from onyx.prompts.agent_search import (
 )
 from onyx.prompts.agent_search import UNKNOWN_ANSWER
 from onyx.tools.tool_implementations.search.search_tool import yield_search_responses
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def generate_initial_answer(
     state: SubQuestionRetrievalState,
     config: RunnableConfig,

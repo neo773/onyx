@@ -32,10 +32,12 @@ from onyx.chat.models import StreamType
 from onyx.configs.agent_configs import AGENT_MAX_ANSWER_CONTEXT_DOCS
 from onyx.prompts.agent_search import NO_RECOVERED_DOCS
 from onyx.utils.logger import setup_logger
+from onyx.utils.timing import log_function_time
 
 logger = setup_logger()
 
 
+@log_function_time(print_only=True)
 def generate_sub_answer(
     state: AnswerQuestionState,
     config: RunnableConfig,

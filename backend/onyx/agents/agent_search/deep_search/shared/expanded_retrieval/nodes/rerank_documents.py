@@ -25,8 +25,10 @@ from onyx.context.search.models import SearchRequest
 from onyx.context.search.pipeline import retrieval_preprocessing
 from onyx.context.search.postprocessing.postprocessing import rerank_sections
 from onyx.db.engine import get_session_context_manager
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def rerank_documents(
     state: ExpandedRetrievalState, config: RunnableConfig
 ) -> DocRerankingUpdate:

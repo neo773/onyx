@@ -10,8 +10,10 @@ from onyx.agents.agent_search.deep_search.main.states import (
 from onyx.agents.agent_search.shared_graph_utils.utils import (
     get_langgraph_node_log_string,
 )
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def validate_initial_answer(
     state: SubQuestionRetrievalState,
 ) -> InitialAnswerQualityUpdate:

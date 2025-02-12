@@ -18,8 +18,10 @@ from onyx.agents.agent_search.shared_graph_utils.utils import (
 from onyx.agents.agent_search.shared_graph_utils.utils import parse_question_id
 from onyx.prompts.agent_search import SUB_ANSWER_CHECK_PROMPT
 from onyx.prompts.agent_search import UNKNOWN_ANSWER
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def check_sub_answer(
     state: AnswerQuestionState, config: RunnableConfig
 ) -> SubQuestionAnswerCheckUpdate:

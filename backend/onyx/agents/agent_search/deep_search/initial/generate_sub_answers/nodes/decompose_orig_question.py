@@ -40,10 +40,12 @@ from onyx.prompts.agent_search import (
     INITIAL_QUESTION_DECOMPOSITION_PROMPT_ASSUMING_REFINEMENT,
 )
 from onyx.utils.logger import setup_logger
+from onyx.utils.timing import log_function_time
 
 logger = setup_logger()
 
 
+@log_function_time(print_only=True)
 def decompose_orig_question(
     state: SubQuestionRetrievalState,
     config: RunnableConfig,

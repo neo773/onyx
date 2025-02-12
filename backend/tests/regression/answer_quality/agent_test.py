@@ -62,6 +62,8 @@ test_data = json.load(input_file_object)
 example_data = test_data["examples"]
 example_ids = test_data["example_ids"]
 
+failed_example_ids: list[int] = []
+
 with get_session_context_manager() as db_session:
     output_data: dict[str, Any] = {}
 
@@ -75,132 +77,143 @@ with get_session_context_manager() as db_session:
         if len(example_ids) > 0 and example_id not in example_ids:
             continue
 
-        example_question = example["question"]
-        target_sub_questions = example.get("target_sub_questions", [])
-        num_target_sub_questions = len(target_sub_questions)
-        search_request = SearchRequest(query=example_question)
+        try:
+            example_question = example["question"]
+            target_sub_questions = example.get("target_sub_questions", [])
+            num_target_sub_questions = len(target_sub_questions)
+            search_request = SearchRequest(query=example_question)
 
-        query_start_time: datetime = datetime.now()
-        initial_answer_duration: timedelta | None = None
-        refined_answer_duration: timedelta | None = None
-        base_answer_duration: timedelta | None = None
+            query_start_time: datetime = datetime.now()
+            initial_answer_duration: timedelta | None = None
+            refined_answer_duration: timedelta | None = None
+            base_answer_duration: timedelta | None = None
 
-        logger.debug(f"Start at {query_start_time}")
+            logger.debug(f"Start at {query_start_time}")
 
-        graph = main_graph_builder_a()
-        compiled_graph = graph.compile()
-        query_end_time = datetime.now()
+            graph = main_graph_builder_a()
+            compiled_graph = graph.compile()
+            query_end_time = datetime.now()
 
-        search_request = SearchRequest(
-            # query="what can you do with gitlab?",
-            # query="What are the guiding principles behind the development of cockroachDB",
-            # query="What are the temperatures in Munich, Hawaii, and New York?",
-            # query="When was Washington born?",
-            # query="What is Onyx?",
-            # query="What is the difference between astronomy and astrology?",
-            query=example_question,
-        )
-
-        answer_tokens: dict[str, list[str]] = defaultdict(list)
-
-        with get_session_context_manager() as db_session:
-            config = get_test_config(db_session, primary_llm, fast_llm, search_request)
-            assert (
-                config.persistence is not None
-            ), "set a chat session id to run this test"
-
-            # search_request.persona = get_persona_by_id(1, None, db_session)
-            # config.perform_initial_search_path_decision = False
-            config.behavior.perform_initial_search_decomposition = True
-            input = MainInput_a(
-                base_question=config.inputs.search_request.query, log_messages=[]
+            search_request = SearchRequest(
+                # query="what can you do with gitlab?",
+                # query="What are the guiding principles behind the development of cockroachDB",
+                # query="What are the temperatures in Munich, Hawaii, and New York?",
+                # query="When was Washington born?",
+                # query="What is Onyx?",
+                # query="What is the difference between astronomy and astrology?",
+                query=example_question,
             )
 
-            # Base Flow
-            base_flow_start_time: datetime = datetime.now()
-            for output in run_basic_graph(config):
-                if isinstance(output, OnyxAnswerPiece):
-                    answer_tokens["base_answer"].append(output.answer_piece or "")
+            answer_tokens: dict[str, list[str]] = defaultdict(list)
 
-            output_data["base_answer"] = " ".join(answer_tokens["base_answer"])
-            output_data["base_answer_duration"] = datetime.now() - base_flow_start_time
+            with get_session_context_manager() as db_session:
+                config = get_test_config(
+                    db_session, primary_llm, fast_llm, search_request
+                )
+                assert (
+                    config.persistence is not None
+                ), "set a chat session id to run this test"
 
-            # Agent Flow
-            agent_flow_start_time: datetime = datetime.now()
-            config = get_test_config(
-                db_session,
-                primary_llm,
-                fast_llm,
-                search_request,
-                use_agentic_search=True,
-            )
+                # search_request.persona = get_persona_by_id(1, None, db_session)
+                # config.perform_initial_search_path_decision = False
+                config.behavior.perform_initial_search_decomposition = True
+                input = MainInput_a(
+                    base_question=config.inputs.search_request.query, log_messages=[]
+                )
 
-            config.tooling.force_use_tool = ForceUseTool(
-                force_use=True, tool_name=SearchTool._NAME
-            )
+                # Base Flow
+                base_flow_start_time: datetime = datetime.now()
+                for output in run_basic_graph(config):
+                    if isinstance(output, OnyxAnswerPiece):
+                        answer_tokens["base_answer"].append(output.answer_piece or "")
 
-            tool_responses: list = []
+                output_data["base_answer"] = " ".join(answer_tokens["base_answer"])
+                output_data["base_answer_duration"] = (
+                    datetime.now() - base_flow_start_time
+                )
 
-            sub_question_dict_tokens: dict[int, dict[int, str]] = defaultdict(
-                lambda: defaultdict(str)
-            )
+                # Agent Flow
+                agent_flow_start_time: datetime = datetime.now()
+                config = get_test_config(
+                    db_session,
+                    primary_llm,
+                    fast_llm,
+                    search_request,
+                    use_agentic_search=True,
+                )
 
-            for output in run_main_graph(config):
-                if isinstance(output, AgentAnswerPiece):
-                    if output.level == 0 and output.level_question_num == 0:
-                        answer_tokens["initial"].append(output.answer_piece)
-                    elif output.level == 1 and output.level_question_num == 0:
-                        answer_tokens["refined"].append(output.answer_piece)
-                elif isinstance(output, SubQuestionPiece):
-                    if (
-                        output.level is not None
-                        and output.level_question_num is not None
-                    ):
-                        sub_question_dict_tokens[output.level][
-                            output.level_question_num
-                        ] += output.sub_question
-                elif isinstance(output, StreamStopInfo):
-                    if (
-                        output.stream_type == StreamType.MAIN_ANSWER
-                        and output.level == 0
-                    ):
-                        initial_answer_duration = datetime.now() - agent_flow_start_time
-                elif isinstance(output, RefinedAnswerImprovement):
-                    output_data["refined_answer_improves_on_initial_answer"] = str(
-                        output.refined_answer_improvement
-                    )
+                config.tooling.force_use_tool = ForceUseTool(
+                    force_use=True, tool_name=SearchTool._NAME
+                )
 
-            refined_answer_duration = datetime.now() - agent_flow_start_time
+                tool_responses: list = []
 
-            output_data["example_id"] = example_id
-            output_data["question"] = example_question
-            output_data["initial_answer"] = " ".join(answer_tokens["initial"])
-            output_data["refined_answer"] = " ".join(answer_tokens["refined"])
-            output_data["initial_answer_duration"] = initial_answer_duration or ""
-            output_data["refined_answer_duration"] = refined_answer_duration
+                sub_question_dict_tokens: dict[int, dict[int, str]] = defaultdict(
+                    lambda: defaultdict(str)
+                )
 
-            output_data["initial_sub_questions"] = "\n---\n".join(
-                [x for x in sub_question_dict_tokens[0].values()]
-            )
-            output_data["refined_sub_questions"] = "\n---\n".join(
-                [x for x in sub_question_dict_tokens[1].values()]
-            )
+                for output in run_main_graph(config):
+                    if isinstance(output, AgentAnswerPiece):
+                        if output.level == 0 and output.level_question_num == 0:
+                            answer_tokens["initial"].append(output.answer_piece)
+                        elif output.level == 1 and output.level_question_num == 0:
+                            answer_tokens["refined"].append(output.answer_piece)
+                    elif isinstance(output, SubQuestionPiece):
+                        if (
+                            output.level is not None
+                            and output.level_question_num is not None
+                        ):
+                            sub_question_dict_tokens[output.level][
+                                output.level_question_num
+                            ] += output.sub_question
+                    elif isinstance(output, StreamStopInfo):
+                        if (
+                            output.stream_type == StreamType.MAIN_ANSWER
+                            and output.level == 0
+                        ):
+                            initial_answer_duration = (
+                                datetime.now() - agent_flow_start_time
+                            )
+                    elif isinstance(output, RefinedAnswerImprovement):
+                        output_data["refined_answer_improves_on_initial_answer"] = str(
+                            output.refined_answer_improvement
+                        )
 
-            csv_output_data.append(
-                [
-                    str(example_id),
-                    example_question,
-                    output_data["base_answer"],
-                    output_data["base_answer_duration"],
-                    output_data["initial_sub_questions"],
-                    output_data["initial_answer"],
-                    output_data["initial_answer_duration"],
-                    output_data["refined_sub_questions"],
-                    output_data["refined_answer"],
-                    output_data["refined_answer_duration"],
-                    output_data["refined_answer_improves_on_initial_answer"],
-                ]
-            )
+                refined_answer_duration = datetime.now() - agent_flow_start_time
+
+                output_data["example_id"] = example_id
+                output_data["question"] = example_question
+                output_data["initial_answer"] = " ".join(answer_tokens["initial"])
+                output_data["refined_answer"] = " ".join(answer_tokens["refined"])
+                output_data["initial_answer_duration"] = initial_answer_duration or ""
+                output_data["refined_answer_duration"] = refined_answer_duration
+
+                output_data["initial_sub_questions"] = "\n---\n".join(
+                    [x for x in sub_question_dict_tokens[0].values()]
+                )
+                output_data["refined_sub_questions"] = "\n---\n".join(
+                    [x for x in sub_question_dict_tokens[1].values()]
+                )
+
+                csv_output_data.append(
+                    [
+                        str(example_id),
+                        example_question,
+                        output_data["base_answer"],
+                        output_data["base_answer_duration"],
+                        output_data["initial_sub_questions"],
+                        output_data["initial_answer"],
+                        output_data["initial_answer_duration"],
+                        output_data["refined_sub_questions"],
+                        output_data["refined_answer"],
+                        output_data["refined_answer_duration"],
+                        output_data["refined_answer_improves_on_initial_answer"],
+                    ]
+                )
+        except Exception as e:
+            logger.error(f"Error processing example {example_id}: {e}")
+            failed_example_ids.append(example_id)
+            continue
 
 
 with open(output_file, "w", newline="") as csvfile:

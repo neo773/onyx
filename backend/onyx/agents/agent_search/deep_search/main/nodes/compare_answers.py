@@ -18,8 +18,10 @@ from onyx.chat.models import RefinedAnswerImprovement
 from onyx.prompts.agent_search import (
     INITIAL_REFINED_ANSWER_COMPARISON_PROMPT,
 )
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def compare_answers(
     state: MainState, config: RunnableConfig, writer: StreamWriter = lambda _: None
 ) -> InitialRefinedAnswerComparisonUpdate:

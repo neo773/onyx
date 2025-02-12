@@ -20,8 +20,10 @@ from onyx.agents.agent_search.shared_graph_utils.utils import (
 from onyx.prompts.agent_search import (
     DOCUMENT_VERIFICATION_PROMPT,
 )
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def verify_documents(
     state: DocVerificationInput, config: RunnableConfig
 ) -> DocVerificationUpdate:

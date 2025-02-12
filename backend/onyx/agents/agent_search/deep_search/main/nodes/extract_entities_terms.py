@@ -24,8 +24,10 @@ from onyx.agents.agent_search.shared_graph_utils.utils import (
 from onyx.configs.constants import NUM_EXPLORATORY_DOCS
 from onyx.prompts.agent_search import ENTITY_TERM_EXTRACTION_PROMPT
 from onyx.prompts.agent_search import ENTITY_TERM_EXTRACTION_PROMPT_JSON_EXAMPLE
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def extract_entities_terms(
     state: MainState, config: RunnableConfig
 ) -> EntityTermExtractionUpdate:

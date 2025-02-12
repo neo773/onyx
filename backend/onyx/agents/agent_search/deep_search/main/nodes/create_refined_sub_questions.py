@@ -34,8 +34,10 @@ from onyx.prompts.agent_search import (
     REFINEMENT_QUESTION_DECOMPOSITION_PROMPT_W_INITIAL_SUBQUESTION_ANSWERS,
 )
 from onyx.tools.models import ToolCallKickoff
+from onyx.utils.timing import log_function_time
 
 
+@log_function_time(print_only=True)
 def create_refined_sub_questions(
     state: MainState, config: RunnableConfig, writer: StreamWriter = lambda _: None
 ) -> RefinedQuestionDecompositionUpdate:
