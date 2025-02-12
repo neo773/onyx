@@ -597,9 +597,7 @@ class VespaDebugging:
     def delete_documents_for_tenant(
         self, tenant_id: str, count: int | None = None
     ) -> None:
-        delete_documents_for_tenant_individually(
-            self.index_name, tenant_id, count=count
-        )
+        delete_documents_for_tenant(self.index_name, tenant_id, count=count)
 
     def search_for_document(
         self, document_id: str | None = None, tenant_id: str | None = None
@@ -676,7 +674,7 @@ def delete_where(
         print(f"Delete where completed with status: {response.status_code}")
 
 
-def delete_documents_for_tenant_individually(
+def delete_documents_for_tenant(
     index_name: str,
     tenant_id: str,
     route: str | None = None,
@@ -720,7 +718,9 @@ def delete_documents_for_tenant_individually(
                 fields = doc.get("fields", {})
                 doc_id_value = fields.get("document_id") or fields.get("documentid")
                 tenant_id = fields.get("tenant_id")
-                print("DELETING DOC WITH ID", doc_id_value, "AND TENANT ID", tenant_id)
+                if tenant_id != tenant_id:
+                    raise Exception("Tenant ID mismatch")
+
                 if not doc_id_value:
                     logger.warning(
                         "Skipping a document that has no document_id in 'fields'."
@@ -742,7 +742,6 @@ def delete_documents_for_tenant_individually(
                 response = client.delete(url, params=params)
                 if response.status_code == 200:
                     logger.info(f"Successfully deleted doc_id={doc_id_value}")
-                    print(f"Deleted doc_id={doc_id_value}")
                     deleted_count += 1
                 else:
                     logger.error(
@@ -750,6 +749,10 @@ def delete_documents_for_tenant_individually(
                         f"status={response.status_code}, response={response.text}"
                     )
                     print(
+                        f"Could not delete doc_id={doc_id_value}. "
+                        f"Status={response.status_code}, response={response.text}"
+                    )
+                    raise Exception(
                         f"Could not delete doc_id={doc_id_value}. "
                         f"Status={response.status_code}, response={response.text}"
                     )
