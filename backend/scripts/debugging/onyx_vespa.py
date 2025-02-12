@@ -790,7 +790,9 @@ def main() -> None:
     args = parser.parse_args()
     vespa_debug = VespaDebugging(args.tenant_id)
 
-    if args.action == "config":
+    if args.action == "delete-all-documents":
+        vespa_debug.delete_documents_for_tenant(args.count)
+    elif args.action == "config":
         vespa_debug.print_config()
     elif args.action == "connect":
         vespa_debug.check_connectivity()
