@@ -594,10 +594,10 @@ class VespaDebugging:
     ) -> None:
         update_document(self.tenant_id, connector_id, doc_id, fields)
 
-    def delete_documents_for_tenant(
-        self, tenant_id: str, count: int | None = None
-    ) -> None:
-        delete_documents_for_tenant(self.index_name, tenant_id, count=count)
+    def delete_documents_for_tenant(self, count: int | None = None) -> None:
+        if not self.tenant_id:
+            raise Exception("Tenant ID is not set")
+        delete_documents_for_tenant(self.index_name, self.tenant_id, count=count)
 
     def search_for_document(
         self, document_id: str | None = None, tenant_id: str | None = None
